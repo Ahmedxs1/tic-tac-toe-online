@@ -124,7 +124,6 @@ class Game:
         for player in self.players:
             if player["ws"] == ws:
                 self.players.remove(player)
-                await ws.close()
                 break
                 
 
