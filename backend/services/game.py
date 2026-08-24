@@ -1,4 +1,5 @@
 from fastapi import WebSocket
+import asyncio
 
 class Game:
     def __init__(self):
@@ -68,11 +69,19 @@ class Game:
 
                 winner = self.checkWinner()
                 if winner:
-                    await self.broadcast({
-                        "type": "win",
-                        "content": winner
-                    })
-                    self.isRunning = False
+                    # self.isRunning = False
+                    if winner != "E":
+                        await self.broadcast({
+                            "type": "win",
+                            "content": winner
+                        })
+                    else:
+                        await self.broadcast({
+                            "type": "tie",
+                            "content": "no one won"
+                        })
+                    await self.resetGameState()
+                                            
 
     def checkWinner(self):
         for row in self.board:
@@ -98,8 +107,17 @@ class Game:
         ):
             return self.board[0][2]
 
+        if self.endOfgame():
+            return "E"
         return None
 
+    def endOfgame(self):
+        for row in self.board:
+            for cell in row:
+                if cell == "":
+                    return False
+        return True
+    
     async def broadcast(self, message: dict):
         for player in self.players:
             await player["ws"].send_json(message)
@@ -112,6 +130,7 @@ class Game:
         })
 
     async def resetGameState(self):
+        await asyncio.sleep(1)
         print("Game reset")
         self.board = [["" for _ in range(3)] for _ in range(3)]
         self.isRunning = True

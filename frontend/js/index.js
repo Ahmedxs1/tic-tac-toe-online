@@ -34,7 +34,7 @@ function updateTurnStatus(currentPlayer) {
 }
 
 function initGame(){
-
+    console.log("initGame")
     for (const cell of cells) {
         cell.textContent = "";
         cell.addEventListener("click", () => {
@@ -71,16 +71,25 @@ function main(){
             return
         }
         if (data.type == "gameStateUpdate"){
-            // console.log("gameStateUpdate")
+            console.log("gameStateUpdate")
             updateBoard(data.board) 
 
             updateTurnStatus(data.currentPlayer);
             return;
         }
-        if (data.type == "win"){
-            alert( data.content + " has won")
+        if (data.type == "win") {
+            setTimeout(() => {
+                alert(data.content + " has won");
+            }, 1000);
             return;
         }
+
+        if (data.type == "tie") {
+            setTimeout(() => {
+                alert(data.content);
+            }, 1000);
+            return;
+        }       
         if (data.type == "alert"){
             alert(data.content);
             return
