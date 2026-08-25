@@ -1,122 +1,63 @@
-// declaration
+import {generatePartyKey} from "./api.js"
 
-const ws = new WebSocket(
-    window.location.hostname === "127.0.0.1"
-        ? "ws://127.0.0.1:2222/game/ws"
-        : `wss://${window.location.host}/game/ws`
-);
-
-const cells = document.getElementsByClassName("game-cell");
-let currentPlayer;
-let me;
-
-const playerChar = document.getElementById("player-char");
-const turnStatus = document.getElementById("turn-status");
-const gameContainer = document.getElementById("game-container");
-
-function updateTurnStatus(currentPlayer) {
-
-    if (!me) {
-        return;
-    }
-    
-    playerChar.textContent = me
-
-    if (currentPlayer === me) {
-        turnStatus.textContent = "Your turn";
-        gameContainer.classList.add("my-turn");
-        gameContainer.classList.remove("not-my-turn");
-    } else {
-        turnStatus.textContent = "Opponent's turn";
-        gameContainer.classList.add("not-my-turn");
-        gameContainer.classList.remove("my-turn");
-    }
-}
-
-function initGame(){
-    console.log("initGame")
-    for (const cell of cells) {
-        cell.textContent = "";
-        cell.addEventListener("click", () => {
-            handleCellClick(cell);
-        })
-    }
-    
-}
-
-function handleCellClick(cell){
-    ws.send(JSON.stringify({
-        type: "play",
-        index: cell.id,
-    }))
+// check for player name in localStorage
+const playerName = localStorage.getItem("playerName");
+if (!playerName){
+    window.location.href = "login.html"
+}else{
+    init();
 }
 
 
+function init(){
+    document.getElementById("player-name").innerHTML += "<mark>" +  playerName + "</mark>"
+    const partyKeyField = document.getElementById("generated-party-key");
 
-function main(){
-    initGame();
+    document.getElementById("changename-btn").addEventListener("click", () => {
+        localStorage.removeItem("playerName");
+        window.location.href = "login.html"
+        
+    });
 
-    ws.addEventListener('open', (event) => {
-        console.log('Connected to the Webws server.');
-    
-        ws.send(JSON.stringify({
-            type: "infoMe",
-        }))
-    })
-    ws.addEventListener('message', (event) => {
-        const data = JSON.parse(event.data);
-    
-        if (data.type == "meInfo"){
-            me = data.content;
+
+    document.getElementById("generate-party-key-btn").addEventListener("click", async () => {
+        if (partyKeyField.value != "") {
+            alert("party key already generated")
             return
-        }
-        if (data.type == "gameStateUpdate"){
-            console.log("gameStateUpdate")
-            updateBoard(data.board) 
+        };
+        const partyKey = await generatePartyKey();
+        partyKeyField.value = partyKey;
+    });
 
-            updateTurnStatus(data.currentPlayer);
+    document.getElementById("copy-party-key-btn").addEventListener("click", async () => {
+        const partyKey = partyKeyField.value;
+        if (partyKey == ""){
+            alert("Generate a key first");
+            return;
+        } 
+
+        try{
+            await navigator.clipboard.writeText(partyKey);
+            console.log("Clipboard copied text " + partyKey)
+            alert("Party key copied");
+
+        }catch (error){
+            console.error('Failed to copy text:', error);
+        }
+    });
+
+    document.getElementById("join-party-key-btn").addEventListener("click", () => {
+        const partyKey = document.getElementById("join-party-key").value.trim().toUpperCase();
+        if (partyKey.length != 6){
+            alert("invalid party key");
             return;
         }
-        if (data.type == "win") {
-            setTimeout(() => {
-                alert(data.content + " has won");
-            }, 1000);
-            return;
-        }
 
-        if (data.type == "tie") {
-            setTimeout(() => {
-                alert(data.content);
-            }, 1000);
-            return;
-        }       
-        if (data.type == "alert"){
-            alert(data.content);
-            return
-        }
-        if (data.type == "rejection"){
-            alert(data.content)
-        }
+        localStorage.setItem("partyKey", partyKey);
+        window.location.href = "/game.html"
+
 
     });
-    
-    ws.addEventListener('error', (event) => {
-        console.error('Webws error observed:', event);
-    });
-    
-    ws.addEventListener('close', (event) => {
-        console.log(`Connection closed. Code: ${event.code}, Reason: ${event.reason}`);
-    });
-    
+
 }
 
-function updateBoard(board){
-    for (let i = 0; i < 3; i++){
-        for (let j = 0; j < 3; j++){
-            cells[i * 3 + j].textContent = board[i][j]
-        }
-    }
-}
-
-// program entry
-main();
