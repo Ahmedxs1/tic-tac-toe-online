@@ -3,12 +3,13 @@ import asyncio
 
 class Game:
     def __init__(self):
-        self.players = [] # list [WebSocket]
+        self.players = []
         self.board = [["" for _ in range(3)] for _ in range(3)]
         self.isRunning = True
         self.currentPlayer = "X"
+        self.oponent_name_is_brodcasted = False
 
-    async def connect(self, ws: WebSocket):
+    async def connect(self, ws: WebSocket, player_name: str):
         await ws.accept()
         if (len(self.players) >= 2):
             await ws.send_json({
@@ -19,11 +20,12 @@ class Game:
             return False
 
         availableChar = self.availableChar() 
+
         self.players.append({
             "ws": ws,
-            "char": availableChar
+            "char": availableChar,
+            "player-name": player_name
         })
-
 
         await ws.send_json({
             "type": "meInfo",
@@ -42,6 +44,13 @@ class Game:
 
             if not self.isRunning:
                 await self.resetGameState()
+
+            if len(self.players) < 2:
+                await ws.send_json({
+                    "type": "alert",
+                    "content": "other player didnot join"
+                })
+                return
 
             playerChar = self.getPlayerFromWebSocket(ws)
             if playerChar != self.currentPlayer:
@@ -144,7 +153,8 @@ class Game:
             if player["ws"] == ws:
                 self.players.remove(player)
                 break
-                
+
+        # self.oponent_name_is_brodcasted = False
 
         print("Player Disconnected")
         print(f"number of players {len(self.players)}")
@@ -162,3 +172,11 @@ class Game:
             if player["ws"] == ws:
                 return player["char"]
         return None
+
+    async def broadcast_oponent_name(self):     
+        if len(self.players) == 2 and not self.oponent_name_is_brodcasted:
+            await self.broadcast({
+                "type": "oponent-name",
+                "content": [self.players[0]["player-name"], self.players[1]["player-name"]]
+            })
+            self.oponent_name_is_brodcasted = True

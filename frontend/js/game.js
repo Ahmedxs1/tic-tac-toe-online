@@ -7,6 +7,7 @@ let ws;
 const playerChar = document.getElementById("player-char");
 const turnStatus = document.getElementById("turn-status");
 const gameContainer = document.getElementById("game-container");
+const playerName = localStorage.getItem("playerName");
 
 const partyKey = localStorage.getItem("partyKey");
 if (!partyKey){
@@ -16,11 +17,13 @@ if (!partyKey){
 
     console.log("party key = " + partyKey)
     
-    ws = new WebSocket(
-        window.location.hostname === "127.0.0.1"
-        ? `ws://127.0.0.1:2222/game/ws/${partyKey}`
-        : `wss://${window.location.host}/game/ws/${partyKey}`
-    );
+    const isLocal = window.location.hostname === "127.0.0.1";
+
+    const wsUrl = isLocal
+        ? `ws://127.0.0.1:2222/game/ws/${partyKey}/${playerName}`
+        : `wss://${window.location.host}/game/ws/${partyKey}/${playerName}`;
+
+    ws = new WebSocket(wsUrl);
     
     
     
@@ -131,6 +134,11 @@ function main(){
         }
         if (data.type == "rejection"){
             alert(data.content)
+            return;
+        }
+        if (data.type == "oponent-name"){
+            displayOponentName(data.content);
+            return;
         }
 
     });
@@ -153,3 +161,10 @@ function updateBoard(board){
     }
 }
 
+function displayOponentName(names){
+    for (const name of names){
+        if (name != localStorage.getItem("playerName")){
+            document.getElementById("player-name").innerHTML += ` VS <mark>${name}</mark>`
+        }
+    }
+}

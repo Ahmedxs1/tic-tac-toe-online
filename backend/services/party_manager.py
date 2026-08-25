@@ -1,4 +1,5 @@
 from services.game import Game
+import asyncio
 
 
 parties: dict[str, Game] = {}
@@ -13,7 +14,12 @@ def generate_party_key():
     return ''.join(secrets.choice(chars) for _ in range(6))
 
 
-def delete_party(key: str):
-    if key in parties:
+async def delete_party(key: str, game: Game):
+    await asyncio.sleep(1.5)
+
+    # Check AGAIN after 1 second
+    if key in parties and not game.players:
         del parties[key]
+
         print(f"Party {key} deleted")
+        print(f"number of parties = {len(parties)}")
