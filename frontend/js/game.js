@@ -1,43 +1,42 @@
-// check for player name in localStorage
-const playerName = localStorage.getItem("playerName");
-if (!playerName){
-    window.location.href = "login.html"
-    process.exit(0)
-}else{
-    document.getElementById("player-name").innerHTML += "<mark>" +  playerName + "</mark>"
-}
-
-
-// declaration
-
-const partyKey = localStorage.getItem("partyKey");
-
-
-const ws = new WebSocket(
-    window.location.hostname === "127.0.0.1"
-        ? `ws://127.0.0.1:2222/game/ws/${partyKey}`
-        : `wss://${window.location.host}/game/ws/${partyKey}`
-);
-
+const partyKeyField = document.getElementById("party-key");
 const cells = document.getElementsByClassName("game-cell");
 let currentPlayer;
 let me;
+let ws;
 
 const playerChar = document.getElementById("player-char");
 const turnStatus = document.getElementById("turn-status");
 const gameContainer = document.getElementById("game-container");
 
-// end declaration
+const partyKey = localStorage.getItem("partyKey");
+if (!partyKey){
+    window.location.href = "index.html";
+    
+}else{
+
+    console.log("party key = " + partyKey)
+    
+    ws = new WebSocket(
+        window.location.hostname === "127.0.0.1"
+        ? `ws://127.0.0.1:2222/game/ws/${partyKey}`
+        : `wss://${window.location.host}/game/ws/${partyKey}`
+    );
+    
+    
+    
+    main();
+}
+
 
 
 function updateTurnStatus(currentPlayer) {
-
+    
     if (!me) {
         return;
     }
     
     playerChar.textContent = me
-
+    
     if (currentPlayer === me) {
         turnStatus.textContent = "Your turn";
         gameContainer.classList.add("my-turn");
@@ -70,11 +69,31 @@ function handleCellClick(cell){
 
 
 function main(){
-    initGame();
+    
+    const playerName = localStorage.getItem("playerName");
+    if (!playerName){
+        window.location.href = "login.html"
+        return;
+    }
+    document.getElementById("player-name").innerHTML += "<mark>" +  playerName + "</mark>"
+    
+    partyKeyField.value = partyKey
 
+    document.getElementById("copy-party-key-btn").addEventListener("click", async () => {
+        try{
+            await navigator.clipboard.writeText(partyKey);
+            console.log("Clipboard copied text " + partyKey)
+            alert("Party key copied");
+
+        }catch (error){
+            console.error('Failed to copy text:', error);
+        }
+    });
+    initGame();
+    
     ws.addEventListener('open', (event) => {
         console.log('Connected to the Webws server.');
-    
+        
         ws.send(JSON.stringify({
             type: "infoMe",
         }))
@@ -134,5 +153,3 @@ function updateBoard(board){
     }
 }
 
-// program entry
-main();

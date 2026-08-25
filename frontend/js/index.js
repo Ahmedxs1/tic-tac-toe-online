@@ -1,17 +1,18 @@
 import {generatePartyKey} from "./api.js"
 
 // check for player name in localStorage
-const playerName = localStorage.getItem("playerName");
-if (!playerName){
-    window.location.href = "login.html"
-}else{
-    init();
-}
+
+main();
 
 
-function init(){
+
+function main(){
+    const playerName = localStorage.getItem("playerName");
+    if (!playerName){
+        window.location.href = "login.html"
+        return;
+    }
     document.getElementById("player-name").innerHTML += "<mark>" +  playerName + "</mark>"
-    const partyKeyField = document.getElementById("generated-party-key");
 
     document.getElementById("changename-btn").addEventListener("click", () => {
         localStorage.removeItem("playerName");
@@ -21,30 +22,28 @@ function init(){
 
 
     document.getElementById("generate-party-key-btn").addEventListener("click", async () => {
-        if (partyKeyField.value != "") {
-            alert("party key already generated")
-            return
-        };
         const partyKey = await generatePartyKey();
-        partyKeyField.value = partyKey;
+
+        localStorage.setItem("partyKey", partyKey)
+        window.location.href = "game.html"
     });
 
-    document.getElementById("copy-party-key-btn").addEventListener("click", async () => {
-        const partyKey = partyKeyField.value;
-        if (partyKey == ""){
-            alert("Generate a key first");
-            return;
-        } 
+    // document.getElementById("copy-party-key-btn").addEventListener("click", async () => {
+    //     const partyKey = partyKeyField.value;
+    //     if (partyKey == ""){
+    //         alert("Generate a key first");
+    //         return;
+    //     } 
 
-        try{
-            await navigator.clipboard.writeText(partyKey);
-            console.log("Clipboard copied text " + partyKey)
-            alert("Party key copied");
+    //     try{
+    //         await navigator.clipboard.writeText(partyKey);
+    //         console.log("Clipboard copied text " + partyKey)
+    //         alert("Party key copied");
 
-        }catch (error){
-            console.error('Failed to copy text:', error);
-        }
-    });
+    //     }catch (error){
+    //         console.error('Failed to copy text:', error);
+    //     }
+    // });
 
     document.getElementById("join-party-key-btn").addEventListener("click", () => {
         const partyKey = document.getElementById("join-party-key").value.trim().toUpperCase();
